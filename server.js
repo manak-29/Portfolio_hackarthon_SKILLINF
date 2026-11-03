@@ -25,7 +25,7 @@ const MIME = {
 const server = http.createServer((req, res) => {
   let reqUrl = decodeURIComponent(req.url.split('?')[0]);
   if (reqUrl === '/' || reqUrl === '') {
-    reqUrl = '/Portfolio_final_f3.html';
+    reqUrl = fs.existsSync(path.join(ROOT, 'index.html')) ? '/index.html' : '/Portfolio_final_f3.html';
   }
   const filePath = path.join(ROOT, reqUrl);
 
@@ -53,6 +53,6 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`Server listening on http://localhost:${PORT}/`);
-  console.log(`Direct link: http://localhost:${PORT}/Portfolio_final_f3.html`);
+  console.log(`Direct link: http://localhost:${PORT}/index.html`);
 });
 
