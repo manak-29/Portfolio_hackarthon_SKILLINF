@@ -24,7 +24,8 @@ body{font-family:Georgia,"Times New Roman",serif;color:var(--ink)}
 
 .cap{position:fixed;z-index:6;pointer-events:none;margin:0;opacity:0;font-style:italic;font-weight:700;color:var(--ink);font-size:clamp(2rem,5.2vw,5.8rem);line-height:1.02;will-change:transform}
 .cap .w{display:inline-block;white-space:nowrap;margin-right:.24em}
-.cap .ch{display:inline-block;will-change:transform,opacity,filter;transform-origin:50% 70%}
+.cap .ch{display:inline-block;will-change:transform,opacity;transform-origin:50% 70%}
+@media (max-aspect-ratio:1/1),(pointer:coarse){.cap .ch{will-change:auto}.cap{will-change:auto}}
 .cap .ul{display:block;width:100%;height:.3em;margin-top:.1em;overflow:visible}
 .cap .ul path{fill:none;stroke:var(--warm);stroke-width:3;stroke-linecap:butt;stroke-dasharray:1;stroke-dashoffset:1}
 #c1{left:55vw;top:8vh;width:42vw;text-align:left;font-size:clamp(2.2rem,6.6vw,8rem);line-height:1.04}
@@ -237,7 +238,9 @@ const TITLES=["Morning","The classroom","Choose your world","What is he doing no
 const T=[500,500,700,400],X=70,AE=400,S=[AE,AE+500,AE+1000,AE+1700],END=AE+2100,INTRO=.012;
 const calm=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const sc=document.getElementById('scroller'),view=document.getElementById('view'),bar=document.getElementById('bar');
-sc.style.height=(END+100)+'vh';
+const LITE=matchMedia('(max-aspect-ratio:1/1), (pointer:coarse)').matches;
+const SLOW=LITE?1.6:1.35; /* >1 = story advances more slowly per scroll */
+sc.style.height=(END*SLOW+100)+'vh';
 const fr=SCENES.map((h,i)=>{const f=document.createElement('iframe');f.className='fr';f.title='Scene '+(i+1)+': '+TITLES[i];f.srcdoc=h;view.appendChild(f);return f});
 const PORT=matchMedia('(max-aspect-ratio: 1/1)'),PW=[200,200,125,100],camS=[.25,.25,.5,.5];
 const sizeFr=()=>fr.forEach((f,i)=>{f.style.width=(PORT.matches?PW[i]:100)+'vw'});PORT.addEventListener('change',sizeFr);sizeFr();
@@ -294,21 +297,22 @@ if(window.gsap){
    zoom:{f:{scale:()=>R(5,9),rotation:()=>R(-40,40)},e:'expo.out',s:'center'},
    slam:{f:{x:()=>R(-700,-300),skewX:-45,rotation:()=>R(-25,25)},e:'elastic.out(1,.55)',s:'start'},
    drop:{f:{y:()=>R(-650,-320),rotationX:()=>R(-140,140),scale:1.5,transformPerspective:700},e:'bounce.out',s:'random'}}[c.fx||'scatter'],
-  from=calm?{opacity:0}:Object.assign({opacity:0,filter:'blur(16px)',color:col0,textShadow:GLOW},FX.f),
-  to=calm?{opacity:1,duration:c.i*.6,stagger:{amount:c.i*.4}}:{x:0,y:0,rotation:0,rotationX:0,rotationY:0,skewX:0,scale:1,opacity:1,filter:'blur(0px)',color:fin,textShadow:HALO,duration:c.i*.7,ease:FX.e,stagger:{amount:c.i*.38,from:FX.s}};
+  from=calm?{opacity:0}:Object.assign(LITE?{opacity:0,color:col0}:{opacity:0,filter:'blur(16px)',color:col0,textShadow:GLOW},FX.f),
+  to=calm?{opacity:1,duration:c.i*.6,stagger:{amount:c.i*.4}}:{x:0,y:0,rotation:0,rotationX:0,rotationY:0,skewX:0,scale:1,opacity:1,color:fin,duration:c.i*.7,ease:FX.e,stagger:{amount:c.i*.38,from:FX.s}};
+  if(!LITE&&!calm){to.filter='blur(0px)';to.textShadow=HALO}
   M.fromTo(ch,from,to,c.a);
-  M.to(ch,calm?{opacity:0,duration:c.o*.6}:{x:()=>R(-140,140),y:()=>R(-260,-80),rotation:()=>R(-140,140),scale:()=>R(.15,.7),opacity:0,filter:'blur(10px)',duration:c.o*.6,ease:'power2.in',stagger:{amount:c.o*.38,from:'random'}},c.b-c.o);
+  M.to(ch,calm?{opacity:0,duration:c.o*.6}:{x:()=>R(-140,140),y:()=>R(-260,-80),rotation:()=>R(-140,140),scale:()=>R(.15,.7),opacity:0,...(LITE?{}:{filter:'blur(10px)'}),duration:c.o*.6,ease:'power2.in',stagger:{amount:c.o*.38,from:'random'}},c.b-c.o);
   const ul=c.el.querySelector('.ul path');if(ul&&!calm){M.fromTo(ul,{strokeDashoffset:1},{strokeDashoffset:0,duration:c.i*.7,ease:'power2.out'},c.a+c.i*.4);M.to(ul,{strokeDashoffset:-1,duration:c.o*.6,ease:'power2.in'},c.b-c.o)}
   if(!calm)M.fromTo(c.el,{y:28},{y:-28,duration:c.b-c.a,ease:'none'},c.a);
   c.el.style.opacity=1});
- if(!calm)skews=CAPS.map(c=>gsap.quickTo(c.el,'skewX',{duration:.45,ease:'power3.out'}));
+ if(!calm&&!LITE)skews=CAPS.map(c=>gsap.quickTo(c.el,'skewX',{duration:.45,ease:'power3.out'}));
  introT=gsap.to(P,{t:26,duration:2.2,delay:.5,ease:'power2.out',onUpdate:()=>M.time(P.t),onComplete:()=>{floorT=26;introT=null}});
 }
 function scrub(u,dv){
  if(!M){CAPS.forEach(c=>c.el.style.opacity=fbWin(c,u));return}
  if(introT){if(u<=1)return;introT.kill();introT=null;floorT=26;P.t=Math.min(P.t,26)}
  const tt=Math.max(u,floorT);
- if(Math.abs(tt-lastU)>.01){lastU=tt;gsap.to(P,{t:tt,duration:.9,ease:'power3.out',overwrite:true,onUpdate:()=>M.time(P.t)})}
+ if(Math.abs(tt-lastU)>.01){lastU=tt;gsap.to(P,{t:tt,duration:1.1,ease:'power3.out',overwrite:true,onUpdate:()=>M.time(P.t)})}
  if(skews.length){const k=Math.max(-9,Math.min(9,-dv*1.6));skews.forEach(f=>f(k))}
 }
 function placeTags(){const d=fr[2].contentDocument;if(!d)return;CAPS.forEach(c=>{if(!c.tag)return;const po=d.getElementById('po'+c.tag);if(!po)return;const r=po.getBoundingClientRect();const fo=fr[2].getBoundingClientRect().left,hw=c.el.offsetWidth/2;c.el.style.left=Math.min(innerWidth-hw-6,Math.max(hw+6,fo+r.left+r.width/2))+'px';c.el.style.top=Math.max(8,r.top-c.el.offsetHeight-4)+'px'})}
